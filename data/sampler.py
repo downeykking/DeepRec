@@ -4,7 +4,7 @@ from utils import typeassert
 from utils import pad_sequences
 from collections import Iterable
 from collections import OrderedDict, defaultdict
-from .iteraction import Interaction
+from .interaction import Interaction
 import numpy as np
 import itertools
 import torch
@@ -357,14 +357,15 @@ class PairwiseSamplerV2(Sampler):
         self.num_items = dataset.num_items
         self.user_pos_dict = dataset.to_user_dict()
         # see https://github.com/gusye1234/LightGCN-PyTorch/blob/master/code/utils.py#L73 and https://github.com/gusye1234/LightGCN-PyTorch/blob/master/code/dataloader.py#L252
-        self.num_trainings = sum([len(item) for _, item in self.user_pos_dict.items()])
+        # self.num_trainings = sum([len(item) for _, item in self.user_pos_dict.items()])
+        self.num_trainings = dataset.num_ratings
         # self.user_pos_dict = {u: np.array(item) for u, item in user_pos_dict.items()}
 
     def __iter__(self):
-        num_samples = self.num_trainings if self.batch_size < self.num_trainings else self.batch_size
-        users_list, pos_items_list, neg_items_list = \
-            _pairwise_sampling_v2(self.user_pos_dict, num_samples, self.num_neg, self.num_items)
+
         # print(len(users_list), len(pos_items_list), len(neg_items_list))
+        users_list, pos_items_list, neg_items_list = \
+            _pairwise_sampling_v2(self.user_pos_dict, self.num_trainings, self.num_neg, self.num_items)
 
         data_iter = DataIterator(users_list, pos_items_list, neg_items_list,
                                  batch_size=self.batch_size,

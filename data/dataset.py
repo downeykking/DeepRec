@@ -1,4 +1,4 @@
-from .iteraction import Interaction
+from .interaction import Interaction
 import pandas as pd
 import numpy as np
 from collections import OrderedDict

@@ -225,7 +225,7 @@ class Preprocessor(object):
         self.all_data[self._ITEM] = self.all_data[self._ITEM].map(self.item2id)
 
     @typeassert(train=float, valid=float, test=float)
-    def split_data_by_ratio(self, train=0.7, valid=0.1, test=0.2, by_time=True):
+    def split_data_by_ratio(self, train=0.7, valid=0.1, test=0.2, by_time=False):
         """Split dataset by the given ratios.
 
         The dataset will be split by each user.
@@ -239,7 +239,8 @@ class Preprocessor(object):
         """
         if train <= 0.0:
             raise ValueError("'train' must be a positive value.")
-        if train + valid + test != 1.0:
+
+        if not np.isclose(train + valid + test, 1):
             raise ValueError("The sum of 'train', 'valid' and 'test' must be equal to 1.0.")
         print("splitting data by ratio...")
 
@@ -250,7 +251,7 @@ class Preprocessor(object):
         self._config["by_time"] = str(by_time)
 
         if by_time is False or self._TIME not in self._column_name:
-            sort_key = [self._USER, self._ITEM]
+            sort_key = [self._USER]
         else:
             sort_key = [self._USER, self._TIME]
 
@@ -264,8 +265,8 @@ class Preprocessor(object):
         user_grouped = self.all_data.groupby(by=self._USER)
         for user, u_data in user_grouped:
             u_data_len = len(u_data)
-            # if not by_time:
-            #     u_data = u_data.sample(frac=1)
+            if not by_time:
+                u_data = u_data.sample(frac=1)
             train_end = math.ceil(train * u_data_len)
             train_data.append(u_data.iloc[:train_end])
             if valid != 0:
@@ -300,7 +301,7 @@ class Preprocessor(object):
         self._config["by_time"] = str(by_time)
 
         if by_time is False or self._TIME not in self._column_name:
-            sort_key = [self._USER, self._ITEM]
+            sort_key = [self._USER]
         else:
             sort_key = [self._USER, self._TIME]
         print("splitting data by leave out...")
@@ -314,8 +315,8 @@ class Preprocessor(object):
 
         user_grouped = self.all_data.groupby(by=self._USER)
         for user, u_data in user_grouped:
-            # if not by_time:
-            #     u_data = u_data.sample(frac=1)
+            if not by_time:
+                u_data = u_data.sample(frac=1)
             train_end = -(valid + test)
             train_data.append(u_data.iloc[:train_end])
             if valid != 0:
