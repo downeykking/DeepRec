@@ -26,7 +26,7 @@ def generate_processed_files(root_dir, save_dir, dataset_name, columns, sep,
         data.split_data_by_leave_out(valid=1, test=1)
     elif spilt_mode == 'ratio':
         train, valid, test = ratio
-        data.split_data_by_ratio(train, valid, test, by_time=True)
+        data.split_data_by_ratio(train, valid, test, by_time=False)
     else:
         raise TypeError('spilt_mode must in (ratio, leave_out)')
     data.save_data(root_dir=save_dir)

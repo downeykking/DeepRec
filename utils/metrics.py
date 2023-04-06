@@ -388,17 +388,17 @@ def topk_metrics(y_true, y_pred, topKs=[3]):
 
 
 if __name__ == "__main__":
-    y_pred = [[0, 1], [0, 1], [2, 3]]
-    y_true = [[1, 2], [0, 1, 2], [3, 4]]
+    y_pred = [[0, 1, 4], [0, 1, 6], [2, 3, 7]]
+    y_true = [[1, 2, 5, 7], [0, 1, 2, 6, 8], [3, 4, 6, 7]]
     r = get_relevant(y_true, y_pred)
 
-    r2 = np.array([[1, 0, 1, 1, 0], [0, 0, 0, 1, 1]])
+    # r2 = np.array([[1, 0, 1, 1, 0], [0, 0, 0, 1, 1]])
     # print(r2.dtype)
     # print(map_at_k(r2, 5))
 
     # test
-    # out = topk_metrics(y_true, y_pred, topKs=(2, 1))
-    # print(out)
+    out = topk_metrics(y_true, y_pred, topKs=(2, 3))
+    print(out)
     # print(r)
     # print(mrr_at_k(r, 2) / 3)
     # print(recall_at_k(r, 2, y_true) / 3)
@@ -407,7 +407,7 @@ if __name__ == "__main__":
     # print(dcg_at_k(r, 2, 0))
     # print(ndcg_at_k(r, 1, y_true) / 3)
 
-    metric = Metric(Ks=[5, 10], used_metrics=["precision", "recall"])
-    print(metric.metrics_info())
+    metric = Metric(Ks=[2, 3], used_metrics=["precision", "recall"])
+    # print(metric.metrics_info())
     results = metric(y_true, y_pred)
     print(results)
