@@ -3,19 +3,19 @@ import torch.nn as nn
 
 
 class BPRLoss(nn.Module):
-    def __init__(self, reduction="mean"):
+    def __init__(self, gamma=1e-10, reduction="mean"):
         """
-        `reduction` (string, optional)
-        - Specifies the reduction to apply to the output: `none` | `mean` | `sum`.
-        `none`: no reduction will be applied.
-        `mean`: the sum of the output will be divided by the number of elements in the output.
-        `sum`: the output will be summed.
-        Note: size_average and reduce are in the process of being deprecated,
-        and in the meantime, specifying either of those two args will override reduction. Default: `sum`
+        Args:
+            gamma (float): Small value to avoid division by zero.
+            reduction (string, optional): Specifies the reduction to apply to the output: `none` | `mean` | `sum`.
+                `none`: no reduction will be applied.
+                `mean`: the sum of the output will be divided by the number of elements in the output.
+                `sum`: the output will be summed.
         """
         assert reduction in ["mean", "sum", "none"]
         super().__init__()
 
+        self.gamma = gamma
         self.reduction = reduction
 
     def forward(self, users_emb, pos_emb, neg_emb, **kwargs):
@@ -29,7 +29,7 @@ class BPRLoss(nn.Module):
         neg_scores = torch.sum(users_emb * neg_emb, dim=1)
 
         # BPR loss
-        loss = -torch.log(torch.sigmoid(pos_scores - neg_scores))
+        loss = -torch.log(self.gamma + torch.sigmoid(pos_scores - neg_scores))
 
         # reduction
         if self.reduction == "mean":
