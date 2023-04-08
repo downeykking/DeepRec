@@ -94,26 +94,26 @@ class Dataset(object):
         train_file = file_prefix + ".train"
         if os.path.isfile(train_file):
             _train_data = pd.read_csv(train_file, sep=sep, usecols=columns)
-            num_train_users = max(_train_data[_USER]) + 1
-            num_train_items = max(_train_data[_ITEM]) + 1
+            # num_train_users = max(_train_data[_USER]) + 1
+            # num_train_items = max(_train_data[_ITEM]) + 1
         else:
             raise FileNotFoundError("%s does not exist." % train_file)
 
         valid_file = file_prefix + ".valid"
         if os.path.isfile(valid_file):
             _valid_data = pd.read_csv(valid_file, sep=sep, usecols=columns)
-            num_valid_users = max(_valid_data[_USER]) + 1
-            num_valid_items = max(_valid_data[_ITEM]) + 1
+            # num_valid_users = max(_valid_data[_USER]) + 1
+            # num_valid_items = max(_valid_data[_ITEM]) + 1
         else:
             _valid_data = pd.DataFrame()
-            num_valid_users, num_valid_items = None, None
+            # num_valid_users, num_valid_items = None, None
             warnings.warn("%s does not exist." % valid_file)
 
         test_file = file_prefix + ".test"
         if os.path.isfile(test_file):
             _test_data = pd.read_csv(test_file, sep=sep, usecols=columns)
-            num_test_users = max(_test_data[_USER]) + 1
-            num_test_items = max(_test_data[_ITEM]) + 1
+            # num_test_users = max(_test_data[_USER]) + 1
+            # num_test_items = max(_test_data[_ITEM]) + 1
         else:
             raise FileNotFoundError("%s does not exist." % test_file)
 
@@ -142,9 +142,12 @@ class Dataset(object):
         self.num_train_ratings = len(_train_data)
 
         # convert to to the object of Interaction
-        self._train_data = Interaction(_train_data, num_users=num_train_users, num_items=num_train_items)
-        self._valid_data = Interaction(_valid_data, num_users=num_valid_users, num_items=num_valid_items)
-        self._test_data = Interaction(_test_data, num_users=num_test_users, num_items=num_test_items)
+        # self._train_data = Interaction(_train_data, num_users=num_train_users, num_items=num_train_items)
+        # self._valid_data = Interaction(_valid_data, num_users=num_valid_users, num_items=num_valid_items)
+        # self._test_data = Interaction(_test_data, num_users=num_test_users, num_items=num_test_items)
+        self._train_data = Interaction(_train_data, num_users=self.num_users, num_items=self.num_items)
+        self._valid_data = Interaction(_valid_data, num_users=self.num_users, num_items=self.num_items)
+        self._test_data = Interaction(_test_data, num_users=self.num_users, num_items=self.num_items)
 
     def _group_item_by_frequency(self):
         i_degree = np.array(self.train_csr_mat.sum(0))[0].astype(np.int32)

@@ -123,7 +123,7 @@ class Preprocessor(object):
             dropped_idx = self.all_data[name].isnull()
             self.all_data = self.all_data[~dropped_idx]
 
-    def filter_by_field_value(self, user_value=None, item_value=None, rating_value=None, time_value=None):
+    def filter_by_field_value(self, user_value=None, item_value=None, rating_value=None, time_value=None, **kwargs):
         """
         Args:
             rating_value is a list to filter data between rating_value, such as `rating_value = [3, 5]` or `rating_value = [3, 'inf']`
@@ -241,7 +241,7 @@ class Preprocessor(object):
             raise ValueError("'train' must be a positive value.")
 
         if not np.isclose(train + valid + test, 1):
-            raise ValueError("The sum of 'train', 'valid' and 'test' must be equal to 1.0.")
+            raise ValueError("The sum of 'train', 'valid' and 'test' must equal to 1.0.")
         print("splitting data by ratio...")
 
         self._config["split_by"] = "ratio"

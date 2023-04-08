@@ -7,7 +7,8 @@ from utils import typeassert, pad_sequences
 from collections import OrderedDict
 from copy import deepcopy
 import torch
-from torch_geometric.utils import get_laplacian, to_undirected
+from torch_geometric.utils import to_undirected
+from torch_geometric.nn.conv.gcn_conv import gcn_norm
 
 
 # meta info
@@ -83,13 +84,14 @@ class Interaction(object):
         num_nodes = self.num_users + self.num_items
         edge_index = torch.stack([row, col], dim=0)
         edge_index = to_undirected(edge_index, num_nodes=num_nodes)
-        edge_index, edge_weight = get_laplacian(edge_index, normalization='sym', num_nodes=num_nodes)
+        edge_index, edge_weight = gcn_norm(edge_index, num_nodes=num_nodes, add_self_loops=False)
 
         return edge_index, edge_weight
 
     def to_user_dict(self, by_time=False):
         """
-            dict: {user: pos_items}
+            Returns:
+                dict: {user (int): pos_items (np.ndarray)}
         """
         if self._data.empty:
             warnings.warn("self._data is empty.")
