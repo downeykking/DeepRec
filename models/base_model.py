@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from data import Interaction
+from data import Dataset
 import numpy as np
 
 
@@ -12,10 +12,22 @@ class BasicModel(nn.Module):
     def forward(self, *args, **kwargs):
         raise NotImplementedError
 
-    def rating(self, *args, **kwargs):
+    def predict(self, *args, **kwargs):
+        r"""Predict the scores between users and items. the size of users and items are the same.
+
+        Returns:
+            torch.Tensor: Predicted scores for given users and items, shape: [batch_size,]
+        """
         raise NotImplementedError
 
-    def evaluate(self, *args, **kwargs):
+    def rating(self, *args, **kwargs):
+        """
+        Given users, calculate the scores between users and all candidate items.
+
+        Returns:
+            torch.Tensor: Predicted scores for given users and all candidate items,
+            shape: [n_batch_users, m_all_candidate_items]
+        """
         raise NotImplementedError
 
 
@@ -38,11 +50,13 @@ class PairWiseModel(BasicModel):
 class PureMF(BasicModel):
     def __init__(self,
                  embed_dim: int,
-                 dataset: Interaction):
+                 dataset: Dataset,
+                 device):
         super(PureMF, self).__init__()
         self.num_users = dataset.num_users
         self.num_items = dataset.num_items
         self.embed_dim = embed_dim
+        self.device = device
         self.user_embeddings = nn.Embedding(self.num_users, self.embed_dim)
         self.item_embeddings = nn.Embedding(self.num_items, self.embed_dim)
         self.reset_parameters()
@@ -59,11 +73,22 @@ class PureMF(BasicModel):
             nn.init.uniform_(self.user_embeddings.weight)
             nn.init.uniform_(self.item_embeddings.weight)
 
+    def predict(self, users, items):
+        users = torch.LongTensor(users).to(self.device)
+        items = torch.LongTensor(items).to(self.device)
+
+        u_embeddings = self.user_embeddings[users]
+        i_embeddings = self.item_embeddings[items]
+
+        scores = torch.mul(u_embeddings, i_embeddings).sum(dim=1)
+        return scores
+
     def rating(self, users):
+        users = torch.LongTensor(users).to(self.device)
         users_emb = self.user_embeddings(users)
         items_emb = self.item_embeddings.weight
         scores = torch.matmul(users_emb, items_emb.t())
-        return nn.Sigmoid()(scores)
+        return scores
 
     def forward(self, users, pos_items, neg_items):
         users_emb = self.user_embeddings(users)
