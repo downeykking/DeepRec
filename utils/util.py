@@ -96,3 +96,9 @@ def varname(p):
         m = re.search(r'\bvarname\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)', line)
         if m:
             return m.group(1)
+
+
+def print_results(all_results, metrics, topks, logger):
+    for metric in metrics:
+        result = {f"{metric:<6}@{topks[i]}": f"{all_results[metric][i]:.4f}" for i in range(len(topks))}
+        logger.info(f'(Test Result): {metric.upper():<6}: {result}')

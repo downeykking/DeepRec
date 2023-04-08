@@ -136,3 +136,13 @@ logs/
 
 # dataset
 rec_data/
+
+# my local debug python file
+debug.py
+
+# files that will often change
+scripts/
+
+# some test data
+*.txt
+*.csv

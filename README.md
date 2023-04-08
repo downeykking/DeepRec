@@ -10,31 +10,36 @@ Many thanks to their wonderful work!*
 1.  `mkdir -p ./rec_data/raw`, `mkdir -p ./rec_data/atom`, `mkdir -p ./rec_data/processed`.
 2.  download raw files to `./rec_data/raw`.
 3.  transfer raw files to atom files via `scripts/raw2atom.sh`, or you can download atom files directly from https://drive.google.com/drive/folders/1so0lckI6N6_niVEYaBu-LIcpOdZf99kj.
-4.  transfer atom files to processed files via `scripts/atom2processed.sh`.
+4.  transfer atom files to processed files(train, valid, test) via `scripts/atom2processed.sh`.
 5.  Now, the files structure will be like `Files structure`.
+6.  You can load `train, valid, test` file via dataset.py.
 
 ## Files structure
 ```
 DeepRec
 ├── data
-│   ├── dataloader.py
-│   ├── dataset.py
 │   ├── __init__.py
+│   ├── dataset.py
+│   ├── dataloader.py
 │   ├── iteraction.py
 │   ├── preprocessor.py
-│   ├── README.md
-│   └── sampler.py
+│   ├── sampler.py
+│   └── README.md
 ├── datasets
-│   ├── all_dataset.py
-│   ├── base_dataset.py
-│   └── __init__.py
-├── losses
-│   ├── bpr_loss.py
 │   ├── __init__.py
-│   └── reg_loss.py
+│   ├── base_dataset.py
+│   └── all_dataset.py
+├── losses
+│   ├── __init__.py
+│   ├── emb_loss.py
+│   ├── reg_loss.py
+│   └── bpr_loss.py
+├── layers
+│   ├── __init__.py
+│   └── layers.py
 ├── models
-│   ├── base_model.py
-│   └── __init__.py
+│   ├── __init__.py
+│   └── base_model.py
 ├── rec_data
 │   ├── atom
 │   │   ├── gowalla
@@ -63,26 +68,29 @@ DeepRec
 │   │   ├── gowalla
 │   │   │   └── loc-gowalla_totalCheckins.txt
 │   │   └── ml-1m
-│   │       ├── movies.dat
-│   │       ├── ratings.dat
 │   │       ├── README
-│   │       └── users.dat
-│   └── _recsys_dataset_test.py
+│   │       ├── users.dat
+│   │       ├── movies.dat
+│   │       └── ratings.dat
 ├── scripts
+│   ├── raw2atom.sh
 │   ├── atom2processed.sh
-│   └── raw2atom.sh
-├── example.py
-├── README.md
-└── utils
-    ├── atom2processed.py
-    ├── decorators.py
-    ├── __init__.py
-    ├── logger.py
-    ├── meta.py
-    ├── metrics.py
-    ├── raw2atom.py
-    └── util.py
+│   └── run_model.sh
+├── examples
+│   └── bpr.py
+├── utils
+│   ├── __init__.py
+│   ├── meta.py
+│   ├── decorators.py
+│   ├── logger.py
+│   ├── metrics.py
+│   ├── util.py
+│   ├── raw2atom.py
+│   └── atom2processed.py
+└── README.md
 ```
 ## Run
-1.  see `./example.py` to know how to load data iter.
-2.  rewrite your models and losses in `./models/` and `./losses/`
+1.  see `./examples/bpr.py` to know how to load data iter and design a model training and testing.
+2.  rewrite your models/layers and losses in `./models/ or ./layers/` and `./losses/`
+3.  write `run_model.sh` under `./scripts/`
+4.  run ```bash scripts/run_model.sh```

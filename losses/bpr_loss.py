@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class BPRLoss(nn.Module):
@@ -29,6 +30,7 @@ class BPRLoss(nn.Module):
         neg_scores = torch.sum(users_emb * neg_emb, dim=1)
 
         # BPR loss
+        # loss = -F.logsigmoid(pos_scores - neg_scores)
         loss = -torch.log(self.gamma + torch.sigmoid(pos_scores - neg_scores))
 
         # reduction
