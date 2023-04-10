@@ -67,6 +67,7 @@ class NGCF(BasicModel):
         if self.node_dropout == 0:
             edge_index, edge_weight = self.edge_index, self.edge_weight
         else:
+            edge_index, edge_weight = self.edge_index, self.edge_weight
             edge_index, edge_mask, _ = dropout_node(edge_index=self.edge_index, p=self.node_dropout)
             edge_weight = edge_weight[edge_mask]
 

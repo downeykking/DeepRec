@@ -2,6 +2,7 @@ from .decorators import typeassert, timer
 from .util import randint_choice, pad_sequences, varname, print_results
 from .logger import setup_logger, get_logger
 from .metrics import Metric
+from .init import xavier_normal_initialization, xavier_uniform_initialization
 
 __all__ = [
     "typeassert",
@@ -12,5 +13,7 @@ __all__ = [
     "get_logger",
     "Metric",
     "varname",
-    "print_results"
+    "print_results",
+    "xavier_normal_initialization",
+    "xavier_uniform_initialization"
 ]

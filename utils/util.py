@@ -37,12 +37,12 @@ def randint_choice(high, size=1, replace=True, p=None, exclusion=None):
 # users = user_idx.tolist()
 
 
-def pad_sequences(sequences, value=0, max_len=None,
+def pad_sequences(sequences, value=-1, max_len=None,
                   padding='post', truncating='post', dtype=int):
     """Pads sequences to the same length.
     Args:
         sequences (list): A list of lists, where each element is a sequence.
-        value (int, float): Padding value. Defaults to `0.`.
+        value (int, float): Padding value. Defaults to `-1`.
         max_len (int or None): Maximum length of all sequences.
         padding (str): `"pre"` or `"post"`: pad either before or after each
             sequence. Defaults to `post`.
@@ -84,6 +84,20 @@ def pad_sequences(sequences, value=0, max_len=None,
         else:
             raise ValueError('Padding type "%s" not understood' % padding)
     return x
+
+# (942, array([  63,   11,  110,  791,   17,  366,  462,   10,   23,  364,  688,
+#         293,   33,  932,   39, 1029,  719, 1043,  887,  267,  610,  300,
+#         833,  315,  882,  119,  372,  621,    0,   93,  405,    1,  174,
+#         161,   57,  135,  576,   48,   73,  217,  213,  138,  221,   84,
+#         214,    6,  431,   67,    4,  142,  403,   95,   86,  383,  141,
+#         430,  218,   81,  158,  147,  650,   55,  103,  215,  102,  730,
+#          83,  530,  229,  528,  522,  143,  941,  386,  648,  133,  740,
+#         388,  591,  428,  379,  944,  380,   58,  731,  611,  533,  207,
+#         232,  389,  836,  375,  609, 1049,  148,   98,  163,  154,  646,
+#         407,  234,  445,  155,  734,  166,  139,  237,  801,  670,  644,
+#         653,  866,  157,  656,  156,  815,  385,  745,  226,  892,  672,
+#        1180, 1080,  146,  374, 1228,  381,  894,   36, 1325,   89,  184,
+#         176,  239,  132,
 
 
 import inspect

@@ -41,6 +41,24 @@ def _generate_positive_items(user_pos_dict):
     return user_n_pos, users_arr, items_arr
 
 
+@typeassert(user_n_pos=OrderedDict, num_neg=int, num_items=int, user_pos_dict=dict)
+def _sampling_negative_items(user_n_pos, num_neg, num_items, user_pos_dict):
+    if num_neg <= 0:
+        raise ValueError("'neg_num' must be a positive integer.")
+
+    neg_items_list = []
+    for user, n_pos in user_n_pos.items():
+        neg_items = randint_choice(num_items, size=n_pos * num_neg, exclusion=user_pos_dict[user])
+        if num_neg == 1:
+            neg_items = neg_items if isinstance(neg_items, Iterable) else [neg_items]
+            neg_items_list.append(neg_items)
+        else:
+            neg_items = np.reshape(neg_items, newshape=[n_pos, num_neg])
+            neg_items_list.append(neg_items)
+
+    return np.concatenate(neg_items_list)
+
+
 @typeassert(user_pos_dict=dict, len_seqs=int, len_next=int, pad=(int, None))
 def _generative_time_order_positive_items(user_pos_dict, len_seqs=1, len_next=1, pad=None):
     if not user_pos_dict:
@@ -75,24 +93,6 @@ def _generative_time_order_positive_items(user_pos_dict, len_seqs=1, len_next=1,
     item_seqs_arr = np.concatenate(item_seqs_list).squeeze()
     next_items_arr = np.concatenate(next_items_list).squeeze()
     return user_n_pos, users_arr, item_seqs_arr, next_items_arr
-
-
-@typeassert(user_n_pos=OrderedDict, num_neg=int, num_items=int, user_pos_dict=dict)
-def _sampling_negative_items(user_n_pos, num_neg, num_items, user_pos_dict):
-    if num_neg <= 0:
-        raise ValueError("'neg_num' must be a positive integer.")
-
-    neg_items_list = []
-    for user, n_pos in user_n_pos.items():
-        neg_items = randint_choice(num_items, size=n_pos * num_neg, exclusion=user_pos_dict[user])
-        if num_neg == 1:
-            neg_items = neg_items if isinstance(neg_items, Iterable) else [neg_items]
-            neg_items_list.append(neg_items)
-        else:
-            neg_items = np.reshape(neg_items, newshape=[n_pos, num_neg])
-            neg_items_list.append(neg_items)
-
-    return np.concatenate(neg_items_list)
 
 
 @typeassert(user_pos_dict=OrderedDict, num_samples=int, num_neg=int, num_item=int)
