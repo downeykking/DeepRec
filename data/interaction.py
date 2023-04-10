@@ -16,11 +16,6 @@ _USER = "user_id"
 _ITEM = "item_id"
 _RATING = "rating"
 _TIME = "timestamp"
-_column_dict = {"UI": [_USER, _ITEM],
-                "UIR": [_USER, _ITEM, _RATING],
-                "UIT": [_USER, _ITEM, _TIME],
-                "UIRT": [_USER, _ITEM, _RATING, _TIME]
-                }
 
 
 class Interaction(object):
@@ -69,7 +64,7 @@ class Interaction(object):
             return None
         return self.to_coo_matrix().todok()
 
-    def get_norm_adj_mat(self):
+    def get_norm_adj_mat(self, add_self_loops=False):
         r"""Get the normalized interaction matrix of users and items.
         Construct the square matrix from the training data and normalize it
         using the laplace matrix.
@@ -84,7 +79,7 @@ class Interaction(object):
         num_nodes = self.num_users + self.num_items
         edge_index = torch.stack([row, col], dim=0)
         edge_index = to_undirected(edge_index, num_nodes=num_nodes)
-        edge_index, edge_weight = gcn_norm(edge_index, num_nodes=num_nodes, add_self_loops=False)
+        edge_index, edge_weight = gcn_norm(edge_index, num_nodes=num_nodes, add_self_loops=add_self_loops)
 
         return edge_index, edge_weight
 
@@ -141,12 +136,12 @@ class Interaction(object):
         self._buffer["item_dict"] = deepcopy(item_dict)
         return item_dict
 
-    def to_truncated_seq_dict(self, max_len, pad_value=0, padding='post', truncating='post'):
+    def to_truncated_seq_dict(self, max_len=None, pad_value=-1, padding='post', truncating='post'):
         """Get the truncated item sequences of each user.
 
         Args:
             max_len (int or None): Maximum length of all sequences.
-            pad_value: Padding value. Defaults to `0.`.
+            pad_value: Padding value. Defaults to `-1`.
             padding (str): `"pre"` or `"post"`: pad either before or after each
                 sequence. Defaults to `post`.
             truncating (str): `"pre"` or `"post"`: remove values from sequences
@@ -155,12 +150,13 @@ class Interaction(object):
 
         Returns:
             OrderedDict: key is user and value is truncated item sequences.
+            {int, np.ndarray}
 
         """
         user_seq_dict = self.to_user_dict(by_time=True)
         if max_len is None:
             max_len = max([len(seqs) for seqs in user_seq_dict.values()])
-        item_seq_list = [item_seq[-max_len:] for item_seq in user_seq_dict.values()]
+        item_seq_list = [item_seq for item_seq in user_seq_dict.values()]
         item_seq_arr = pad_sequences(item_seq_list, value=pad_value, max_len=max_len,
                                      padding=padding, truncating=truncating, dtype=np.int32)
 
