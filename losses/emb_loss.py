@@ -10,16 +10,11 @@ class EmbLoss(nn.Module):
                 reg_weight (float): regularization weight on embeddings.
                 norm (int): p-norm of embeddings.
                 require_pow (bool): whether power the embeddings' norm.
-                reduction (string, optional): Specifies the reduction to apply to the output: `none` | `mean` | `sum`.
-                    `none`: no reduction will be applied.
-                    `mean`: the sum of the output will be divided by the number of elements in the output.
-                    `sum`: the output will be summed.
         """
         super(EmbLoss, self).__init__()
         self.reg_weight = reg_weight
         self.norm = norm
         self.require_pow = require_pow
-        self.reduction = reduction
 
     def forward(self, *embeddings):
         if self.require_pow:
@@ -29,22 +24,14 @@ class EmbLoss(nn.Module):
                     input=torch.norm(embedding, p=self.norm), exponent=self.norm
                 )
             emb_loss /= self.norm
+            emb_loss /= embeddings[-1].size(0)
         else:
             emb_loss = torch.zeros(1).to(embeddings[-1].device)
             for embedding in embeddings:
                 emb_loss += torch.norm(embedding, p=self.norm)
+            emb_loss /= embeddings[-1].size(0)
 
-        emb_loss *= self.reg_weight
-
-        if self.reduction == "mean":
-            emb_loss = torch.mean(emb_loss)
-        elif self.reduction == "sum":
-            emb_loss = torch.sum(emb_loss)
-        elif self.reduction == "none":
-            pass
-        else:
-            raise ValueError("reduction must be  'none' | 'mean' | 'sum'")
-        return emb_loss
+        return emb_loss * self.reg_weight
 
 
 class EmbMarginLoss(nn.Module):
