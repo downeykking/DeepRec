@@ -60,7 +60,7 @@ def _sampling_negative_items(user_n_pos, num_neg, num_items, user_pos_dict):
 
 
 @typeassert(user_pos_dict=dict, len_seqs=int, len_next=int, pad=(int, None))
-def _generative_time_order_positive_items(user_pos_dict, len_seqs=1, len_next=1, pad=None):
+def _generative_time_order_positive_items(user_pos_dict, len_seqs=1, len_next=1, pad=None, aug=False):
     if not user_pos_dict:
         raise ValueError("'user_pos_dict' cannot be empty.")
 
@@ -73,6 +73,16 @@ def _generative_time_order_positive_items(user_pos_dict, len_seqs=1, len_next=1,
             seq_items = np.array(seq_items, dtype=np.int32)
         if len(seq_items) >= tot_len:
             user_n_pos[user] = 0
+            # TODO add augment like https://recbole.io/docs/get_started/started/sequential.html
+            if aug and pad is not None:
+                for next_item_idx in range(1, len_seqs):
+                    tmp_seqs = seq_items[:next_item_idx]
+                    tmp_seqs = pad_sequences([tmp_seqs], value=pad, max_len=len_seqs,
+                                             padding='post', truncating='post', dtype=np.int32)
+                    item_seqs_list.append(tmp_seqs.squeeze().reshape([1, len_seqs]))
+                    next_items_list.append(seq_items[next_item_idx].reshape([1, len_next]))
+                    users_list.append(user)
+                    user_n_pos[user] += 1
             for idx in range(len(seq_items) - tot_len + 1):
                 tmp_seqs = seq_items[idx:idx + tot_len]
                 item_seqs_list.append(tmp_seqs[:len_seqs].reshape([1, len_seqs]))
@@ -80,10 +90,9 @@ def _generative_time_order_positive_items(user_pos_dict, len_seqs=1, len_next=1,
                 users_list.append(user)
                 user_n_pos[user] += 1
         elif len(seq_items) > len_next and pad is not None:  # padding
-
             next_items_list.append(seq_items[-len_next:].reshape([1, len_next]))
             tmp_seqs = pad_sequences([seq_items[:-len_next]], value=pad, max_len=len_seqs,
-                                     padding='pre', truncating='pre', dtype=np.int32)
+                                     padding='post', truncating='post', dtype=np.int32)
             item_seqs_list.append(tmp_seqs.squeeze().reshape([1, len_seqs]))
             users_list.append(user)
             user_n_pos[user] = 1
@@ -107,35 +116,6 @@ def _pairwise_sampling_v2(user_pos_dict, num_samples, num_neg, num_item):
     user_idx = randint_choice(len(user_arr), size=num_samples, replace=True)
     users_list = user_arr[user_idx]
 
-    # count the number of each user, i.e., the numbers of positive and negative items for each user
-    # user_pos_len = defaultdict(int)
-    # for u in users_list:
-    #     user_pos_len[u] += 1
-
-    # user_pos_sample = dict()
-    # user_neg_sample = dict()
-    # for user, pos_len in user_pos_len.items():
-    #     try:
-    #         if pos_len==0:
-    #             continue
-    #         pos_items = user_pos_dict[user]
-    #         pos_idx = randint_choice(len(pos_items), size=pos_len, replace=True)
-    #         pos_idx = pos_idx if isinstance(pos_idx, Iterable) else [pos_idx]
-    #         user_pos_sample[user] = list(pos_items[pos_idx])
-
-    #         neg_items = randint_choice(num_item, size=pos_len, replace=True, exclusion=user_pos_dict[user])
-    #         user_neg_sample[user] = neg_items if isinstance(neg_items, Iterable) else [neg_items]
-    #     except:  # noqa
-    #         print('error')
-
-    # TODO users_list must be uinque
-    # pos_items_list = [user_pos_sample[user] for user in users_list]
-    # pos_items_list = list(itertools.chain.from_iterable(pos_items_list))
-
-    # neg_items_list = [user_neg_sample[user] for user in users_list]
-    # neg_items_list = list(itertools.chain.from_iterable(neg_items_list))
-
-    # [1 * user * num_user , 1 * pos * num_user, [num_neg * neg] * num_user]
     pos_items_list, neg_items_list = [0] * len(users_list), [0] * len(users_list)
 
     for idx, user in enumerate(users_list):
@@ -363,7 +343,6 @@ class PairwiseSamplerV2(Sampler):
 
     def __iter__(self):
 
-        # print(len(users_list), len(pos_items_list), len(neg_items_list))
         users_list, pos_items_list, neg_items_list = \
             _pairwise_sampling_v2(self.user_pos_dict, self.num_trainings, self.num_neg, self.num_items)
 
@@ -382,6 +361,7 @@ class PairwiseSamplerV2(Sampler):
             return (n_sample + self.batch_size - 1) // self.batch_size
 
 
+# TODO add augment
 class TimeOrderPointwiseSampler(Sampler):
     """Sampling negative items and construct time ordered pointwise instances.
 
@@ -398,11 +378,10 @@ class TimeOrderPointwiseSampler(Sampler):
     """
 
     @typeassert(dataset=Interaction, len_seqs=int, len_next=int, pad=(int, None),
-                num_neg=int, batch_size=int, shuffle=bool, drop_last=bool)
-    def __init__(self, dataset, len_seqs=1, len_next=1, pad=None, num_neg=1,
+                aug=False, num_neg=int, batch_size=int, shuffle=bool, drop_last=bool)
+    def __init__(self, dataset, len_seqs=1, len_next=1, pad=None, aug=False, num_neg=1,
                  batch_size=1024, shuffle=True, drop_last=False):
         """
-
         Args:
             dataset (data.Interaction): An instance of `data.Interaction`.
             len_seqs (int): The length of item sequence. Default to 1.
@@ -412,6 +391,8 @@ class TimeOrderPointwiseSampler(Sampler):
                 'len_seqs'. Otherwise, the length of item sequence will
                 be padded to 'len_seqs' with the specified pad value.
                 Default to None.
+            aug (bool): Whether to augment data like
+                <https://recbole.io/docs/get_started/started/sequential.html>
             num_neg (int): How many negative items for each item sequence.
                 Default to `1`.
             batch_size (int): How many samples per batch to load.
@@ -439,7 +420,7 @@ class TimeOrderPointwiseSampler(Sampler):
 
         self.user_n_pos, users_arr, item_seqs_arr, self.pos_next_items = \
             _generative_time_order_positive_items(self.user_pos_dict, len_seqs=len_seqs,
-                                                  len_next=len_next, pad=pad)
+                                                  len_next=len_next, pad=pad, aug=aug)
 
         self.all_users = np.tile(users_arr, self.num_neg + 1)
         self.all_item_seqs = np.tile(item_seqs_arr, [self.num_neg + 1, 1])
@@ -488,8 +469,8 @@ class TimeOrderPairwiseSampler(Sampler):
     """
 
     @typeassert(dataset=Interaction, len_seqs=int, len_next=int, pad=(int, None),
-                num_neg=int, batch_size=int, shuffle=bool, drop_last=bool)
-    def __init__(self, dataset, len_seqs=1, len_next=1, pad=None, num_neg=1,
+                aug=bool, num_neg=int, batch_size=int, shuffle=bool, drop_last=bool)
+    def __init__(self, dataset, len_seqs=1, len_next=1, pad=None, aug=False, num_neg=1,
                  batch_size=1024, shuffle=True, drop_last=False):
         """Initializes a new `TimeOrderPairwiseSampler` instance.
 
@@ -502,6 +483,8 @@ class TimeOrderPairwiseSampler(Sampler):
                 'len_seqs'. Otherwise, the length of item sequence will
                 be padded to 'len_seqs' with the specified pad value.
                 Default to None.
+            aug (bool): Whether to augment data like
+                <https://recbole.io/docs/get_started/started/sequential.html>
             num_neg (int): How many negative items for each item sequence.
                 Default to `1`.
             batch_size (int): How many samples per batch to load.
@@ -529,7 +512,7 @@ class TimeOrderPairwiseSampler(Sampler):
 
         self.user_n_pos, self.all_users, self.all_item_seqs, self.pos_next_items = \
             _generative_time_order_positive_items(self.user_pos_dict, len_seqs=len_seqs,
-                                                  len_next=len_next, pad=pad)
+                                                  len_next=len_next, pad=pad, aug=aug)
 
     def __iter__(self):
         neg_next_items = _sampling_negative_items(self.user_n_pos, self.num_neg,
