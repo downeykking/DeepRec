@@ -20,7 +20,7 @@ def randint_choice(high, size=1, replace=True, p=None, exclusion=None):
         return np.random.choice(high, size, replace=replace)
 
     elif exclusion is not None:
-        items = np.zeros(size)
+        items = np.zeros(size, dtype=np.int32)
         cnt = 0
         while True:
             num = np.random.randint(0, high=high)

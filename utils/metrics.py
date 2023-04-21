@@ -5,8 +5,8 @@ import torch
 from collections.abc import Iterable
 
 # -------------------------------------metrics------------------------------------------
-# ref: https://github.com/gusye1234/LightGCN-PyTorch/blob/master/code/Procedure.py#L135
-# ref: https://github.com/huangtinglin/NGCF-PyTorch/blob/master/NGCF/utility/metrics.py
+# ref: <https://github.com/gusye1234/LightGCN-PyTorch/blob/master/code/Procedure.py#L135>
+# ref: <https://github.com/huangtinglin/NGCF-PyTorch/blob/master/NGCF/utility/metrics.py>
 
 
 class Metric(object):
@@ -208,7 +208,7 @@ def dcg_at_k(r, k, method=1):
     assert r.shape[1] >= k
     pred_data = r[:, :k]
     if method == 0:
-        dcg_score = pred_data[:, 0] + (pred_data[:, 1:] / np.log2(np.arange(3, k + 2))).sum(1)
+        dcg_score = (pred_data / np.log2(np.arange(2, k + 2))).sum(1)
         # we don't sum dcg_score for the usage of ndcg
         return dcg_score
     elif method == 1:
@@ -237,7 +237,6 @@ def ndcg_at_k(r, k, test_true_data):
     assert len(r) == len(test_true_data)
     assert r.shape[1] >= k
     pred_data = r[:, :k]
-
     ideal_r = np.zeros_like(pred_data)
     for i, items in enumerate(test_true_data):
         length = k if k <= len(items) else len(items)
@@ -389,8 +388,9 @@ def topk_metrics(y_true, y_pred, topKs=[3]):
 
 if __name__ == "__main__":
     y_pred = [[0, 1, 4], [0, 1, 6], [2, 3, 7]]
-    y_true = [[1, 2, 5, 7], [0, 1, 2, 6, 8], [3, 4, 6, 7]]
+    y_true = [[1, 2, 5, 7], [0, 1, 2, 6, 8], [3, 7, 9]]
     r = get_relevant(y_true, y_pred)
+    print(ndcg_at_k(r, k=3, test_true_data=y_true) / 3)
 
     # r2 = np.array([[1, 0, 1, 1, 0], [0, 0, 0, 1, 1]])
     # print(r2.dtype)
@@ -407,7 +407,7 @@ if __name__ == "__main__":
     # print(dcg_at_k(r, 2, 0))
     # print(ndcg_at_k(r, 1, y_true) / 3)
 
-    metric = Metric(Ks=[2, 3], used_metrics=["precision", "recall"])
+    metric = Metric(Ks=[2, 3], used_metrics=["precision", "ndcg"])
     # print(metric.metrics_info())
     results = metric(y_true, y_pred)
-    print(results)
+    print(results["ndcg"] / 3)
