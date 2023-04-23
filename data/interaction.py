@@ -1,5 +1,4 @@
 import scipy.sparse as sp
-import os
 import warnings
 import pandas as pd
 import numpy as np
@@ -136,6 +135,7 @@ class Interaction(object):
         self._buffer["item_dict"] = deepcopy(item_dict)
         return item_dict
 
+    # store `leave one out spilt manner` sequences of test
     def to_truncated_seq_dict(self, max_len=None, pad_value=-1, padding='post', truncating='post'):
         """Get the truncated item sequences of each user.
 
@@ -156,7 +156,7 @@ class Interaction(object):
         user_seq_dict = self.to_user_dict(by_time=True)
         if max_len is None:
             max_len = max([len(seqs) for seqs in user_seq_dict.values()])
-        item_seq_list = [item_seq for item_seq in user_seq_dict.values()]
+        item_seq_list = [item_seq[-max_len:] for item_seq in user_seq_dict.values()]
         item_seq_arr = pad_sequences(item_seq_list, value=pad_value, max_len=max_len,
                                      padding=padding, truncating=truncating, dtype=np.int32)
 
