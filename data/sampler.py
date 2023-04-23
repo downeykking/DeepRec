@@ -7,7 +7,6 @@ from collections import OrderedDict, defaultdict
 from .interaction import Interaction
 import numpy as np
 import itertools
-import torch
 
 
 class Sampler(object):
@@ -59,49 +58,56 @@ def _sampling_negative_items(user_n_pos, num_neg, num_items, user_pos_dict):
     return np.concatenate(neg_items_list)
 
 
-@typeassert(user_pos_dict=dict, len_seqs=int, len_next=int, pad=(int, None))
-def _generative_time_order_positive_items(user_pos_dict, len_seqs=1, len_next=1, pad=None, aug=False):
+@typeassert(user_pos_dict=dict, len_seqs=int, len_next=int, pad=(int, None), aug=bool, return_seq_len=bool)
+def _generative_time_order_positive_items(user_pos_dict, len_seqs=1, len_next=1, pad=None, aug=False, return_seq_len=False):
     if not user_pos_dict:
         raise ValueError("'user_pos_dict' cannot be empty.")
 
-    users_list, item_seqs_list, next_items_list = [], [], []
+    users_list, item_seqs_list, item_seqs_len_list, next_items_list = [], [], [], []
     user_n_pos = OrderedDict()
 
     tot_len = len_seqs + len_next
     for user, seq_items in user_pos_dict.items():
-        if isinstance(seq_items, np.ndarray):
+        if not isinstance(seq_items, np.ndarray):
             seq_items = np.array(seq_items, dtype=np.int32)
+        user_n_pos[user] = 0
+        # add augment like https://recbole.io/docs/get_started/started/sequential.html
+        if aug and pad is not None:
+            for next_item_idx in range(1, min(len(seq_items), len_seqs)):
+                tmp_seqs = seq_items[:next_item_idx]
+                item_seqs_len_list.append(len(tmp_seqs))
+                tmp_seqs = pad_sequences([tmp_seqs], value=pad, max_len=len_seqs,
+                                         padding='post', truncating='post', dtype=np.int32)
+                item_seqs_list.append(tmp_seqs.squeeze().reshape([1, len_seqs]))
+                next_items_list.append(seq_items[next_item_idx].reshape([1, len_next]))
+                users_list.append(user)
+                user_n_pos[user] += 1
         if len(seq_items) >= tot_len:
-            user_n_pos[user] = 0
-            # TODO add augment like https://recbole.io/docs/get_started/started/sequential.html
-            if aug and pad is not None:
-                for next_item_idx in range(1, len_seqs):
-                    tmp_seqs = seq_items[:next_item_idx]
-                    tmp_seqs = pad_sequences([tmp_seqs], value=pad, max_len=len_seqs,
-                                             padding='post', truncating='post', dtype=np.int32)
-                    item_seqs_list.append(tmp_seqs.squeeze().reshape([1, len_seqs]))
-                    next_items_list.append(seq_items[next_item_idx].reshape([1, len_next]))
-                    users_list.append(user)
-                    user_n_pos[user] += 1
             for idx in range(len(seq_items) - tot_len + 1):
                 tmp_seqs = seq_items[idx:idx + tot_len]
                 item_seqs_list.append(tmp_seqs[:len_seqs].reshape([1, len_seqs]))
+                item_seqs_len_list.append(len_seqs)
                 next_items_list.append(tmp_seqs[len_seqs:].reshape([1, len_next]))
                 users_list.append(user)
                 user_n_pos[user] += 1
-        elif len(seq_items) > len_next and pad is not None:  # padding
+        elif len(seq_items) > len_next and not aug and pad is not None:  # padding
             next_items_list.append(seq_items[-len_next:].reshape([1, len_next]))
             tmp_seqs = pad_sequences([seq_items[:-len_next]], value=pad, max_len=len_seqs,
                                      padding='post', truncating='post', dtype=np.int32)
             item_seqs_list.append(tmp_seqs.squeeze().reshape([1, len_seqs]))
+            item_seqs_len_list.append(len(seq_items) - len_next)
             users_list.append(user)
             user_n_pos[user] = 1
         else:  # discard
             continue
     users_arr = np.int32(users_list)
     item_seqs_arr = np.concatenate(item_seqs_list).squeeze()
+    item_seqs_len_arr = np.int32(item_seqs_len_list)
     next_items_arr = np.concatenate(next_items_list).squeeze()
-    return user_n_pos, users_arr, item_seqs_arr, next_items_arr
+    if return_seq_len:
+        return user_n_pos, users_arr, item_seqs_arr, item_seqs_len_arr, next_items_arr
+    else:
+        return user_n_pos, users_arr, item_seqs_arr, next_items_arr
 
 
 @typeassert(user_pos_dict=OrderedDict, num_samples=int, num_neg=int, num_item=int)
@@ -470,8 +476,8 @@ class TimeOrderPairwiseSampler(Sampler):
 
     @typeassert(dataset=Interaction, len_seqs=int, len_next=int, pad=(int, None),
                 aug=bool, num_neg=int, batch_size=int, shuffle=bool, drop_last=bool)
-    def __init__(self, dataset, len_seqs=1, len_next=1, pad=None, aug=False, num_neg=1,
-                 batch_size=1024, shuffle=True, drop_last=False):
+    def __init__(self, dataset, len_seqs=1, len_next=1, pad=None, aug=False, return_seq_len=False,
+                 num_neg=1, batch_size=1024, shuffle=True, drop_last=False):
         """Initializes a new `TimeOrderPairwiseSampler` instance.
 
         Args:
@@ -483,8 +489,10 @@ class TimeOrderPairwiseSampler(Sampler):
                 'len_seqs'. Otherwise, the length of item sequence will
                 be padded to 'len_seqs' with the specified pad value.
                 Default to None.
-            aug (bool): Whether to augment data like
+            aug (bool): Whether to augment data like:
                 <https://recbole.io/docs/get_started/started/sequential.html>
+            return_seq_len (bool): used for garther index. see:
+                <https://github.com/RUCAIBox/RecBole/blob/master/recbole/model/sequential_recommender/gru4rec.py#L78>
             num_neg (int): How many negative items for each item sequence.
                 Default to `1`.
             batch_size (int): How many samples per batch to load.
@@ -509,20 +517,28 @@ class TimeOrderPairwiseSampler(Sampler):
         self.num_items = dataset.num_items
         self.len_next = len_next
         self.user_pos_dict = dataset.to_user_dict(by_time=True)
+        self.return_seq_len = return_seq_len
 
-        self.user_n_pos, self.all_users, self.all_item_seqs, self.pos_next_items = \
+        self.user_n_pos, self.all_users, self.all_item_seqs, \
+            self.all_item_seqs_len, self.pos_next_items = \
             _generative_time_order_positive_items(self.user_pos_dict, len_seqs=len_seqs,
-                                                  len_next=len_next, pad=pad, aug=aug)
+                                                  len_next=len_next, pad=pad, aug=aug,
+                                                  return_seq_len=True)
 
     def __iter__(self):
         neg_next_items = _sampling_negative_items(self.user_n_pos, self.num_neg,
                                                   self.num_items, self.user_pos_dict)
 
-        data_iter = DataIterator(self.all_users, self.all_item_seqs, self.pos_next_items, neg_next_items,
+        data_iter = DataIterator(self.all_users, self.all_item_seqs,
+                                 self.all_item_seqs_len, self.pos_next_items, neg_next_items,
                                  batch_size=self.batch_size, shuffle=self.shuffle, drop_last=self.drop_last)
 
-        for bat_users, bat_item_seqs, bat_pos_items, bat_neg_items in data_iter:
-            yield np.asarray(bat_users), np.asarray(bat_item_seqs), np.asarray(bat_pos_items), np.asarray(bat_neg_items)
+        for bat_users, bat_item_seqs, bat_item_seqs_len, bat_pos_items, bat_neg_items in data_iter:
+            if self.return_seq_len:
+                yield np.asarray(bat_users), np.asarray(bat_item_seqs), \
+                    np.asarray(bat_item_seqs_len), np.asarray(bat_pos_items), np.asarray(bat_neg_items)
+            else:
+                yield np.asarray(bat_users), np.asarray(bat_item_seqs), np.asarray(bat_pos_items), np.asarray(bat_neg_items)
 
     def __len__(self):
         n_sample = len(self.all_users)
