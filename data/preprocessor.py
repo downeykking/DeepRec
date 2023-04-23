@@ -3,7 +3,7 @@ import os.path as osp
 import math
 import pandas as pd
 import numpy as np
-from utils import typeassert, setup_logger, get_logger
+from utils import typeassert, setup_logger
 from collections import OrderedDict
 import warnings
 
@@ -281,6 +281,10 @@ class Preprocessor(object):
             self.valid_data = pd.concat(valid_data, ignore_index=True)
         self.test_data = pd.concat(test_data, ignore_index=True)
 
+    # TODO whether align with recbole for sequence data preprocessing
+    # see <https://github.com/RUCAIBox/RecBole/issues/1060>
+    # now, we use `yelp.train_data.to_truncated_seq_dict(max_len=5, padding='pre', truncating='pre')` to get valid sequence items.
+    # and use `(yelp.train_data + yelp.valid_data).to_truncated_seq_dict(max_len=5, padding='pre', truncating='pre')` to get test sequence items.
     @typeassert(valid=int, test=int)
     def split_data_by_leave_out(self, valid=1, test=1, by_time=True):
         """Split dataset by leave out certain number items.
