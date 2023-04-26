@@ -136,7 +136,7 @@ class Interaction(object):
         return item_dict
 
     # store `leave one out spilt manner` sequences of test
-    def to_truncated_seq_dict(self, max_len=None, pad_value=-1, padding='post', truncating='post'):
+    def to_truncated_seq_dict(self, max_len=None, pad_value=-1, padding='post', truncating='post', return_seq_len=False):
         """Get the truncated item sequences of each user.
 
         Args:
@@ -160,9 +160,14 @@ class Interaction(object):
         item_seq_arr = pad_sequences(item_seq_list, value=pad_value, max_len=max_len,
                                      padding=padding, truncating=truncating, dtype=np.int32)
 
+        seq_len_dict = OrderedDict([(user, len(item_seq)) for user, item_seq in
+                                    zip(user_seq_dict.keys(), item_seq_list)])
         seq_dict = OrderedDict([(user, item_seq) for user, item_seq in
                                 zip(user_seq_dict.keys(), item_seq_arr)])
-        return seq_dict
+        if return_seq_len:
+            return seq_dict, seq_len_dict
+        else:
+            return seq_dict
 
     def _clean_buffer(self):
         self._buffer.clear()
