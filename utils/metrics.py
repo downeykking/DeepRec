@@ -14,9 +14,9 @@ class Metric(object):
         Args:
             Ks: Ks is a list, such as `[5, 10, 25]`
             used_metrics: use which metric, such as `['recall', 'ndcg']`,
-                and must in ['hit_ratio', 'precision', 'recall', 'ndcg', 'mrr', 'map']
+                and must in ['hit', 'precision', 'recall', 'ndcg', 'mrr', 'map']
         Returns:
-            dict of every metric@ k in Ks, such as `precision, recall, ndcg, mrr, hit_ratio`.
+            dict of every metric@ k in Ks, such as `precision, recall, ndcg, mrr, map, hit (hit_ratio)`.
         Examples:
             ```
             metric = Metric(Ks=[1, 2], used_metrics=["precision", "recall"])
@@ -27,14 +27,14 @@ class Metric(object):
     def __init__(self, Ks, used_metrics):
         self.Ks = Ks
         if used_metrics is None:
-            used_metrics = ['hit_ratio', 'precision', 'recall', 'ndcg', 'mrr', 'map']
+            used_metrics = ['hit', 'precision', 'recall', 'ndcg', 'mrr', 'map']
         if isinstance(used_metrics, str):
             used_metrics = [used_metrics]
         self.used_metrics = [metric.lower() for metric in used_metrics]
 
         # assure metrics in all_metrics
         for metric in self.used_metrics:
-            if metric not in ['hit_ratio', 'precision', 'recall', 'ndcg', 'mrr', 'map']:
+            if metric not in ['hit', 'precision', 'recall', 'ndcg', 'mrr', 'map']:
                 raise ValueError(f"{metric} is not in all metrics")
 
     def __call__(self, test_true_data, test_pred_data):
@@ -50,7 +50,7 @@ class Metric(object):
         return self.computer(test_true_data, test_pred_data)
 
     def computer(self, test_true_data, test_pred_data):
-        precision, recall, ndcg, mrr, hit_ratio, Map = [], [], [], [], [], []
+        precision, recall, ndcg, mrr, hit, Map = [], [], [], [], [], []
         r = get_relevant(test_true_data, test_pred_data)
 
         for K in self.Ks:
@@ -62,16 +62,16 @@ class Metric(object):
                 ndcg.append(ndcg_at_k(r, K, test_true_data))
             if "mrr" in self.used_metrics:
                 mrr.append(mrr_at_k(r, K))
-            if "hit_ratio" in self.used_metrics:
-                hit_ratio.append(hit_at_k(r, K))
+            if "hit" in self.used_metrics:
+                hit.append(hit_at_k(r, K))
             if "map" in self.used_metrics:
-                Map.append(map_at_k(r, K))
+                Map.append(map_at_k(r, K, test_true_data))
 
         results = {
             'precision': np.array(precision),
             'recall': np.array(recall),
             'ndcg': np.array(ndcg),
-            'hit_ratio': np.array(hit_ratio),
+            'hit': np.array(hit),
             'mrr': np.array(mrr),
             'map': np.array(Map)
         }
@@ -105,15 +105,13 @@ def get_relevant(test_true_data, test_pred_data):
     Returns:
         r: [b, max_k_items]
     """
-    r = []
+    r = np.zeros((len(test_pred_data), len(test_pred_data[0])))
     for i in range(len(test_true_data)):
         ground_true = test_true_data[i]
         predict_topk = test_pred_data[i]
-        # pred = list(map(lambda x: x in ground_true, predict_topk))
-        pred = [x in ground_true for x in predict_topk]
-        pred = np.array(pred).astype("float")
-        r.append(pred)
-    return np.array(r).astype('float')
+        pred = np.isin(predict_topk, ground_true)
+        r[i] = pred
+    return r
 
 
 def hit_at_k(r, k):
@@ -396,7 +394,7 @@ if __name__ == "__main__":
     y_pred = [[0, 1, 4], [0, 1, 6], [2, 3, 7]]
     y_true = [[1, 2, 5, 7], [0, 1, 2, 6, 8], [3, 7, 9]]
     r = get_relevant(y_true, y_pred)
-    print(ndcg_at_k(r, k=3, test_true_data=y_true) / 3)
+    # print(ndcg_at_k(r, k=3, test_true_data=y_true) / 3)
 
     # r2 = np.array([[1, 0, 1, 1, 0], [0, 0, 0, 1, 1]])
 
@@ -404,15 +402,15 @@ if __name__ == "__main__":
     out = topk_metrics(y_true, y_pred, topKs=(2, 3))
     print(out)
     # print(r)
-    r = np.array([[1, 1, 1], [1, 1, 0]])
-    print(map_at_k(r, 3, [[1, 2, 5, 7], [0, 1, 2, 6, 8]]) / 2)
+    # r = np.array([[1, 1, 1], [1, 1, 0]])
+    # print(map_at_k(r, 3, [[1, 2, 5, 7], [0, 1, 2, 6, 8]]) / 2)
     # print(recall_at_k(r, 2, y_true) / 3)
     # print(hit_at_k(r, 2) / 3)
     # print(precision_at_k(r, 2) / 3)
     # print(dcg_at_k(r, 2, 0))
     # print(ndcg_at_k(r, 1, y_true) / 3)
 
-    metric = Metric(Ks=[2, 3], used_metrics=["precision", "ndcg"])
+    metric = Metric(Ks=[2, 3], used_metrics=["precision", "ndcg", "mrr", "recall", "map"])
     # print(metric.metrics_info())
     results = metric(y_true, y_pred)
-    print(results["ndcg"] / 3)
+    print(results)
