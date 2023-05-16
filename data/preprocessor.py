@@ -267,10 +267,12 @@ class Preprocessor(object):
             u_data_len = len(u_data)
             if not by_time:
                 u_data = u_data.sample(frac=1)
-            train_end = math.ceil(train * u_data_len)
+            # train_end = math.ceil(train * u_data_len)
+            train_end = int(train * u_data_len)
             train_data.append(u_data.iloc[:train_end])
             if valid != 0:
-                test_begin = train_end + math.ceil(valid * u_data_len)
+                # test_begin = train_end + math.ceil(valid * u_data_len)
+                test_begin = train_end + int(valid * u_data_len)
                 valid_data.append(u_data.iloc[train_end:test_begin])
             else:
                 test_begin = train_end
