@@ -9,8 +9,8 @@ Many thanks to their wonderful work!*
 ## Pre
 1.  `mkdir -p ./rec_data/raw`, `mkdir -p ./rec_data/atom`, `mkdir -p ./rec_data/processed`.
 2.  download raw files to `./rec_data/raw`.
-3.  transfer raw files to atom files via `scripts/raw2atom.sh`, or you can download atom files directly from https://drive.google.com/drive/folders/1so0lckI6N6_niVEYaBu-LIcpOdZf99kj.
-4.  transfer atom files to processed files(train, valid, test) via `scripts/atom2processed.sh`.
+3.  transfer raw files to atom files via `scripts/raw2atom.sh`, or you can download atom files directly from https://drive.google.com/drive/folders/1so0lckI6N6_niVEYaBu-LIcpOdZf99kj. Dataset information see reference https://github.com/RUCAIBox/RecSysDatasets.
+4.  transfer atom files to processed files(train, valid, test) via `scripts/ml-100k.sh`. (Configure different dataset by writing scripts/dataset_name.sh)
 5.  Now, the files structure will be like `Files structure`.
 6.  You can load `train, valid, test` file via dataset.py.
 
@@ -74,7 +74,8 @@ DeepRec
 │   │       └── ratings.dat
 ├── scripts
 │   ├── raw2atom.sh
-│   └── atom2processed.sh
+│   ├── atom2processed.sh
+│   └── ml-100k.sh
 ├── examples
 │   └── puremf.sh
 ├── utils
@@ -87,6 +88,7 @@ DeepRec
 │   ├── util.py
 │   ├── raw2atom.py
 │   └── atom2processed.py
+├── main.py
 └── README.md
 ```
 ## Run

@@ -144,9 +144,6 @@ saved_model/
 # my local debug files
 debug/
 
-# files that will often change
-scripts/
-
 # some test data
 *.txt
 *.csv
