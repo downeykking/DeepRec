@@ -133,6 +133,7 @@ logs/
 
 # model file
 *.pkl
+*.pth
 
 # dataset
 rec_data/

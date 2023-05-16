@@ -13,5 +13,4 @@ python main.py \
         --embedding_size $embedding_size \
         --n_layers $n_layers \
         --reg_weight $reg_weight \
-        --require_pow \
         --lr $lr

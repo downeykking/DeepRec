@@ -3,18 +3,21 @@ import torch.nn as nn
 
 
 class EmbLoss(nn.Module):
-    def __init__(self, reg_weight=1e-6, norm=2, require_pow=False):
+    def __init__(self, reg_weight=1e-6, norm=2, require_pow=True, reduction="mean"):
         """
             EmbLoss, regularization on embeddings.
             Args:
                 reg_weight (float): regularization weight on embeddings.
                 norm (int): p-norm of embeddings.
                 require_pow (bool): whether power the embeddings' norm.
+                reduction (string, optional): must in ["mean", "sum"]
         """
+        assert reduction in ["mean", "sum"]
         super(EmbLoss, self).__init__()
         self.reg_weight = reg_weight
         self.norm = norm
         self.require_pow = require_pow
+        self.reduction = reduction
 
     def forward(self, *embeddings):
         if self.require_pow:
@@ -24,12 +27,14 @@ class EmbLoss(nn.Module):
                     input=torch.norm(embedding, p=self.norm), exponent=self.norm
                 )
             emb_loss /= self.norm
-            emb_loss /= embeddings[-1].size(0)
+            if self.reduction == 'mean':
+                emb_loss /= embeddings[-1].size(0)
         else:
             emb_loss = torch.zeros(1).to(embeddings[-1].device)
             for embedding in embeddings:
                 emb_loss += torch.norm(embedding, p=self.norm)
-            emb_loss /= embeddings[-1].size(0)
+            if self.reduction == 'mean':
+                emb_loss /= embeddings[-1].size(0)
 
         return emb_loss * self.reg_weight
 

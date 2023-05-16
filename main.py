@@ -48,8 +48,8 @@ parser.add_argument('--hidden_size_list', nargs="+", type=int,
                     default=[64, 64, 64], help='a list of hidden representation channels.')
 parser.add_argument('--node_dropout', type=float, default=0.1, help='node dropout rate.')
 parser.add_argument('--message_dropout', type=float, default=0.1, help='edge dropout rate.')
-parser.add_argument('--require_pow', default=False, action='store_true',
-                    help="whether power the embeddings' norm. (default: False)")
+parser.add_argument('--not_require_pow', default=False, action='store_true',
+                    help="don't power the embeddings' norm.(default: False)")
 parser.add_argument('--aug_type', type=str, default="ED",
                     help='augmentation of contrastive learning, must in ["ND", "ED", "RW"].')
 parser.add_argument('--drop_ratio', type=float, default=0, help='drop rate in contrastive learning.')
@@ -80,7 +80,7 @@ config = {
     "message_dropout": args.message_dropout,
     "embedding_size": args.embedding_size,
     "reg_weight": args.reg_weight,
-    "require_pow": args.require_pow,
+    "require_pow": ~args.not_require_pow,
     "aug_type": args.aug_type,
     "drop_ratio": args.drop_ratio,
     "ssl_tau": args.ssl_tau,
