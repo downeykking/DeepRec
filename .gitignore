@@ -137,6 +137,9 @@ logs/
 # dataset
 rec_data/
 
+# saved model
+saved_model/
+
 # my local debug python file
 debug.py
 

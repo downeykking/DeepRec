@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class EmbLoss(nn.Module):
-    def __init__(self, reg_weight=1e-6, norm=2, require_pow=True):
+    def __init__(self, reg_weight=1e-6, norm=2, require_pow=False):
         """
             EmbLoss, regularization on embeddings.
             Args:
