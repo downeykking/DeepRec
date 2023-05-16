@@ -1,11 +1,15 @@
-from .base_model import BasicModel, PureMF, PairWiseModel
-from .lightgcn import LightGCN
+from .base_model import BasicModel
+from .puremf import PureMF
 from .ngcf import NGCF
+from .lightgcn import LightGCN
+from .sgl import SGL
+from .recgcl import RecGCL
 
 __all__ = [
     "BasicModel",
     "PureMF",
-    "PairWiseModel",
+    "NGCF",
     "LightGCN",
-    "NGCF"
+    "SGL",
+    "RecGCL"
 ]
