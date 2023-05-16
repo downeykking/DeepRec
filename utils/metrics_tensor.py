@@ -9,7 +9,7 @@ from collections.abc import Iterable
 # ref: <https://github.com/huangtinglin/NGCF-PyTorch/blob/master/NGCF/utility/metrics.py>
 
 
-class Metric(object):
+class TMetric(object):
     """
         Args:
             Ks: Ks is a list, such as `[5, 10, 25]`
@@ -411,7 +411,7 @@ if __name__ == "__main__":
     # print(dcg_at_k(r, 2, 0))
     # print(ndcg_at_k(r, 1, y_true) / 3)
 
-    metric = Metric(Ks=[2, 3], used_metrics=["precision", "ndcg", "mrr", "recall", "map"])
+    metric = TMetric(Ks=[2, 3], used_metrics=["precision", "ndcg", "mrr", "recall", "map"])
     # print(metric.metrics_info())
     results = metric(y_true, y_pred)
     print(results)

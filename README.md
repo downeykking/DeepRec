@@ -74,23 +74,23 @@ DeepRec
 │   │       └── ratings.dat
 ├── scripts
 │   ├── raw2atom.sh
-│   ├── atom2processed.sh
-│   └── run_model.sh
+│   └── atom2processed.sh
 ├── examples
-│   └── bpr.py
+│   └── puremf.sh
 ├── utils
 │   ├── __init__.py
 │   ├── meta.py
 │   ├── decorators.py
 │   ├── logger.py
 │   ├── metrics.py
+│   ├── metrics_tensor.py
 │   ├── util.py
 │   ├── raw2atom.py
 │   └── atom2processed.py
 └── README.md
 ```
 ## Run
-1.  see `./examples/bpr.py` to know how to load data iter and design a model training and testing.
-2.  rewrite your models/layers and losses in `./models/ or ./layers/` and `./losses/`
-3.  write `run_model.sh` under `./scripts/`
-4.  run ```bash scripts/run_model.sh```
+1.  see `./main.py` to know how to load data iter and design a model training and testing.
+2.  write your own models and layers(if need) and losses in `./models/` and `./layers/` and `./losses/`. See `./models/base_model.py`
+3.  configure your model arguments and write a bash file under `./examples/`
+4.  run ```bash examples/puremf.sh```

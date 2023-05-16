@@ -140,8 +140,8 @@ rec_data/
 # saved model
 saved_model/
 
-# my local debug python file
-debug.py
+# my local debug files
+debug/
 
 # files that will often change
 scripts/
